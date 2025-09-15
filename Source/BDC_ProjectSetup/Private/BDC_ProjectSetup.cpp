@@ -121,9 +121,9 @@ void UBDC_ProjectSetup::GetProjectWindowPreserveAspect(bool& Value)
 
 void UBDC_ProjectSetup::GetProjectWindowBorderless(bool& Value)
 {
-	if (GetDefault<UGeneralEngineSettings>())
+	if (const UGeneralProjectSettings* Settings = GetDefault<UGeneralProjectSettings>())
 	{
-		GetProjectWindowBorderless(Value);
+		Value = Settings->bUseBorderlessWindow;
 	}
 	else
 	{
@@ -133,9 +133,9 @@ void UBDC_ProjectSetup::GetProjectWindowBorderless(bool& Value)
 
 void UBDC_ProjectSetup::GetProjectWindowStartAsVR(bool& Value)
 {
-	if (GetDefault<UGeneralEngineSettings>())
+	if (const UGeneralProjectSettings* Settings = GetDefault<UGeneralProjectSettings>())
 	{
-		GetProjectWindowStartAsVR(Value);
+		Value = Settings->bStartInVR;
 	}
 	else
 	{
@@ -323,18 +323,18 @@ void UBDC_ProjectSetup::SetProjectWindowPreserveAspect(bool bNewValue)
 
 void UBDC_ProjectSetup::SetProjectWindowBorderless(const bool bNewValue)
 {
-	if (UGeneralEngineSettings* Settings = GetMutableDefault<UGeneralEngineSettings>())
+	if (UGeneralProjectSettings* Settings = GetMutableDefault<UGeneralProjectSettings>())
 	{
-		SetProjectWindowBorderless(bNewValue);
+		Settings->bUseBorderlessWindow = bNewValue;
 		Settings->SaveConfig();
 	}
 }
 
 void UBDC_ProjectSetup::SetProjectWindowStartAsVR(const bool bNewValue)
 {
-	if (UGeneralEngineSettings* Settings = GetMutableDefault<UGeneralEngineSettings>())
+	if (UGeneralProjectSettings* Settings = GetMutableDefault<UGeneralProjectSettings>())
 	{
-		SetProjectWindowStartAsVR(bNewValue);
+		Settings->bStartInVR = bNewValue;
 		Settings->SaveConfig();
 	}
 }
