@@ -1,8 +1,9 @@
 #include "BDC_ProjectSetup.h"
-#include "Engine/GeneralProjectSettings.h"
-#include "Engine/GeneralEngineSettings.h"
+
+#include "GeneralEngineSettings.h"
+#include "GeneralProjectSettings.h"
 #include "MoviePlayerSettings.h"
-#include "Slate/UserInterfaceSettings.h"
+#include "Engine/UserInterfaceSettings.h"
 
 //~ Getters
 // =================================================================================================
@@ -29,7 +30,7 @@ void UBDC_ProjectSetup::GetProjectID(FText& AsText, FString& AsString)
 {
 	if (const UGeneralProjectSettings* Settings = GetDefault<UGeneralProjectSettings>())
 	{
-		AsString = Settings->ProjectID;
+		AsString = Settings->ProjectID.ToString();
 		AsText = FText::FromString(AsString);
 	}
 }
@@ -110,7 +111,7 @@ void UBDC_ProjectSetup::GetProjectWindowPreserveAspect(bool& Value)
 {
 	if (const UUserInterfaceSettings* Settings = GetDefault<UUserInterfaceSettings>())
 	{
-		Value = (Settings->RenderFocusRule == ESlatePlayInEditorRenderFocusRule::Always);
+		Value = Settings->RenderFocusRule == ERenderFocusRule::Always;
 	}
 	else
 	{
@@ -120,9 +121,9 @@ void UBDC_ProjectSetup::GetProjectWindowPreserveAspect(bool& Value)
 
 void UBDC_ProjectSetup::GetProjectWindowBorderless(bool& Value)
 {
-	if (const UGeneralEngineSettings* Settings = GetDefault<UGeneralEngineSettings>())
+	if (GetDefault<UGeneralEngineSettings>())
 	{
-		Value = Settings->bUseBorderlessWindow;
+		GetProjectWindowBorderless(Value);
 	}
 	else
 	{
@@ -132,9 +133,9 @@ void UBDC_ProjectSetup::GetProjectWindowBorderless(bool& Value)
 
 void UBDC_ProjectSetup::GetProjectWindowStartAsVR(bool& Value)
 {
-	if (const UGeneralEngineSettings* Settings = GetDefault<UGeneralEngineSettings>())
+	if (GetDefault<UGeneralEngineSettings>())
 	{
-		Value = Settings->bStartInVR;
+		GetProjectWindowStartAsVR(Value);
 	}
 	else
 	{
@@ -229,7 +230,10 @@ void UBDC_ProjectSetup::SetProjectID(const FString& FromString)
 {
 	if (UGeneralProjectSettings* Settings = GetMutableDefault<UGeneralProjectSettings>())
 	{
-		Settings->ProjectID = FromString;
+		if (FGuid NewGuid; FGuid::ParseExact(FromString, EGuidFormats::DigitsWithHyphens, NewGuid))
+		{
+			Settings->ProjectID = NewGuid;
+		}
 		Settings->SaveConfig();
 	}
 }
@@ -311,31 +315,31 @@ void UBDC_ProjectSetup::SetProjectWindowPreserveAspect(bool bNewValue)
 	if (UUserInterfaceSettings* Settings = GetMutableDefault<UUserInterfaceSettings>())
 	{
 		Settings->RenderFocusRule = bNewValue 
-			? ESlatePlayInEditorRenderFocusRule::Always 
-			: ESlatePlayInEditorRenderFocusRule::NonClientWindow;
+			? ERenderFocusRule::Always 
+			: ERenderFocusRule::Never;
 		Settings->SaveConfig();
 	}
 }
 
-void UBDC_ProjectSetup::SetProjectWindowBorderless(bool bNewValue)
+void UBDC_ProjectSetup::SetProjectWindowBorderless(const bool bNewValue)
 {
 	if (UGeneralEngineSettings* Settings = GetMutableDefault<UGeneralEngineSettings>())
 	{
-		Settings->bUseBorderlessWindow = bNewValue;
+		SetProjectWindowBorderless(bNewValue);
 		Settings->SaveConfig();
 	}
 }
 
-void UBDC_ProjectSetup::SetProjectWindowStartAsVR(bool bNewValue)
+void UBDC_ProjectSetup::SetProjectWindowStartAsVR(const bool bNewValue)
 {
 	if (UGeneralEngineSettings* Settings = GetMutableDefault<UGeneralEngineSettings>())
 	{
-		Settings->bStartInVR = bNewValue;
+		SetProjectWindowStartAsVR(bNewValue);
 		Settings->SaveConfig();
 	}
 }
 
-void UBDC_ProjectSetup::SetProjectWindowAllowResize(bool bNewValue)
+void UBDC_ProjectSetup::SetProjectWindowAllowResize(const bool bNewValue)
 {
 	if (UGeneralProjectSettings* Settings = GetMutableDefault<UGeneralProjectSettings>())
 	{
@@ -344,7 +348,7 @@ void UBDC_ProjectSetup::SetProjectWindowAllowResize(bool bNewValue)
 	}
 }
 
-void UBDC_ProjectSetup::SetProjectWindowAllowClose(bool bNewValue)
+void UBDC_ProjectSetup::SetProjectWindowAllowClose(const bool bNewValue)
 {
 	if (UGeneralProjectSettings* Settings = GetMutableDefault<UGeneralProjectSettings>())
 	{
@@ -353,7 +357,7 @@ void UBDC_ProjectSetup::SetProjectWindowAllowClose(bool bNewValue)
 	}
 }
 
-void UBDC_ProjectSetup::SetProjectWindowAllowMaximize(bool bNewValue)
+void UBDC_ProjectSetup::SetProjectWindowAllowMaximize(const bool bNewValue)
 {
 	if (UGeneralProjectSettings* Settings = GetMutableDefault<UGeneralProjectSettings>())
 	{
@@ -362,7 +366,7 @@ void UBDC_ProjectSetup::SetProjectWindowAllowMaximize(bool bNewValue)
 	}
 }
 
-void UBDC_ProjectSetup::SetProjectMoviesAreSkippable(bool bNewValue)
+void UBDC_ProjectSetup::SetProjectMoviesAreSkippable(const bool bNewValue)
 {
 	if (UMoviePlayerSettings* Settings = GetMutableDefault<UMoviePlayerSettings>())
 	{
@@ -371,7 +375,7 @@ void UBDC_ProjectSetup::SetProjectMoviesAreSkippable(bool bNewValue)
 	}
 }
 
-void UBDC_ProjectSetup::SetProjectMoviesWaitForCompletion(bool bNewValue)
+void UBDC_ProjectSetup::SetProjectMoviesWaitForCompletion(const bool bNewValue)
 {
 	if (UMoviePlayerSettings* Settings = GetMutableDefault<UMoviePlayerSettings>())
 	{

@@ -12,7 +12,7 @@ public class BDC_ProjectSetup : ModuleRules
 {
 	public BDC_ProjectSetup(ReadOnlyTargetRules Target) : base(Target)
 	{
-		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
@@ -30,7 +30,8 @@ public class BDC_ProjectSetup : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"DeveloperSettings"
+				"DeveloperSettings", 
+				"MoviePlayer"
 			}
 		);
 	}
