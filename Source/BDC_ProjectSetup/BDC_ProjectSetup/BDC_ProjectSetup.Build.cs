@@ -13,6 +13,7 @@ public class BDC_ProjectSetup : ModuleRules
 	public BDC_ProjectSetup(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		PrivatePCHHeaderFile = "Public/BDC_ProjectSetup.h";
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
