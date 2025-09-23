@@ -11,23 +11,10 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Modules/ModuleInterface.h"
-#include "Framework/Commands/UICommandList.h"
 
-class SBDC_ProjectSetup_OverlayWidget;
-
-class FBDC_ProjectSetupEditorModule : public IModuleInterface
+class FBDC_ProjectSetupModule : public IModuleInterface
 {
 public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
-
-private:
-	/** Toggles the visibility of the overlay widget. */
-	void ToggleOverlay();
-
-	/** The overlay widget instance. */
-	TSharedPtr<SBDC_ProjectSetup_OverlayWidget> OverlayWidget;
-
-	/** Command list for handling keybindings. */
-	TSharedPtr<FUICommandList> PluginCommands;
 };
