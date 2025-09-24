@@ -13,6 +13,7 @@
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
 #include "BDC_ProjectSetupTypes.h"
+#include "Widgets/Input/SComboBox.h"
 
 class SBDC_ProjectSetup_PlayWidget : public SCompoundWidget
 {

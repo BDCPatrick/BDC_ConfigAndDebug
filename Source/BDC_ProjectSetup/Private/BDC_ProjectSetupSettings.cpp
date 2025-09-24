@@ -10,7 +10,7 @@
 */
 #include "BDC_ProjectSetupSettings.h"
 #include "Engine/World.h"
-#include "GameplayTagContainer.h"
+#include "InputCoreTypes.h"
 
 void UBDC_ProjectSetupSettings::SaveToProjectDefaultConfig()
 {
@@ -22,6 +22,6 @@ UBDC_ProjectSetupSettings::UBDC_ProjectSetupSettings()
 	CategoryName = TEXT("Plugins");
 	SectionName = TEXT("BDC Project Setup");
 	
-	ENum_ProjectSetupType = ENum_ProjectSetupType::Setup_Debug;
-	OverlayHotkey = EKeys::Hash;
+	CurrentPlayState = ENum_ProjectSetupType::Setup_Debug;
+	OverlayHotkey = EKeys::Three;
 }

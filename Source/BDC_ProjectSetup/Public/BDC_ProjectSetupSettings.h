@@ -31,5 +31,5 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Project Setup")
 	FKey OverlayHotkey;
 
-	void SaveToProjectDefaultConfig()
-}
+	void SaveToProjectDefaultConfig();
+};

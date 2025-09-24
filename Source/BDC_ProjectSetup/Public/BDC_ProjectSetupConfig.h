@@ -108,7 +108,7 @@ public:
 		return (GWorld != nullptr) && GWorld->IsPlayInEditor();
 	};
 	
-	UFUNCTION(BlueprintCallable, Category = "BDC|Project Setup", meta = (DisplayName = "Get Play-Setup", Keywords = "Play Setup"), ExpandEnumAsExecs="OutExec"	)
+	UFUNCTION(BlueprintCallable, Category = "BDC|Project Setup", meta = (DisplayName = "Get Play-Setup", Keywords = "Play Setup", ExpandEnumAsExecs = "OutExec"))
 	static void GetCurrentPlaySetup(ENum_ProjectSetupOutExec& OutExec);
 
 	//~ Begin Setters (Editor Only)

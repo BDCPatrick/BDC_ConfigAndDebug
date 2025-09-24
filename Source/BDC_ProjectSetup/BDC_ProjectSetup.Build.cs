@@ -19,7 +19,8 @@ public class BDC_ProjectSetup : ModuleRules
 			new string[]
 			{
 				"Core",
-				"Engine"
+				"Engine",
+				"InputCore"
 			}
 		);
 			

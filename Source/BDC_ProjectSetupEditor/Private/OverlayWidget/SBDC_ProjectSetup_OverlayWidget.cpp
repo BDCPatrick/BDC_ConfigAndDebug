@@ -18,14 +18,16 @@
 #include "EngineUtils.h"
 #include "Editor.h"
 #include "Async/Async.h"
+#include "UObject/Script.h"
+#include "UObject/ScriptMacros.h"
 
 void SBDC_ProjectSetup_OverlayWidget::Construct(const FArguments& InArgs)
 {
 	ChildSlot
 	[
 		SNew(SBox)
-		.MaxWidth(320)
-		.MaxHeight(640)
+		.MaxDesiredWidth(320.0f)
+		.MaxDesiredHeight(640.0f)
 		[
 			SNew(SBorder)
 			.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
@@ -33,7 +35,7 @@ void SBDC_ProjectSetup_OverlayWidget::Construct(const FArguments& InArgs)
 			.Padding(4.0f)
 			[
 				SNew(SVerticalBox)
-				
+
 				// Refresh Button
 				+ SVerticalBox::Slot()
 				.AutoHeight()
@@ -73,22 +75,36 @@ void SBDC_ProjectSetup_OverlayWidget::RefreshActorList()
 		.Text(FText::FromString(TEXT("Refreshing...")))
 	];
 
-	RefreshTaskFuture = Async(EAsyncExecution::ThreadPool, [this]()
+	// Ensure all world access happens on the game thread to avoid IsInGameThread assertions
+	RefreshTaskFuture = Async(EAsyncExecution::TaskGraphMainThread, [this]()
 	{
 		TArray<FCallableActor> CallableActors;
-		UWorld* World = GEditor->GetEditorWorldContext().World();
+		UWorld* World = nullptr;
+		if (GEditor)
+		{
+			// Prefer PIE world when playing, otherwise use the editor world
+			if (GEditor->PlayWorld)
+			{
+				World = GEditor->PlayWorld.Get();
+			}
+			else
+			{
+				World = GEditor->GetEditorWorldContext().World();
+			}
+		}
 		if (World)
 		{
 			for (AActor* Actor : TActorRange<AActor>(World))
 			{
-				if (!Actor || Actor->IsPendingKill()) continue;
+				if (!Actor || Actor->IsActorBeingDestroyed()) continue;
 
 				FCallableActor CallableActor;
 				CallableActor.Actor = Actor;
 
 				for (TFieldIterator<UFunction> FuncIt(Actor->GetClass()); FuncIt; ++FuncIt)
 				{
-					if (FuncIt->HasAnyFunctionFlags(FUNC_CallInEditor))
+					const bool bCallable = FuncIt->HasMetaData(FName(TEXT("CallInEditor"))) || FuncIt->HasAnyFunctionFlags(EFunctionFlags::FUNC_Exec);
+					if (bCallable)
 					{
 						CallableActor.Functions.Add(*FuncIt);
 					}
@@ -100,11 +116,8 @@ void SBDC_ProjectSetup_OverlayWidget::RefreshActorList()
 				}
 			}
 		}
-		
-		Async(EAsyncExecution::GameThread, [this, CallableActors]()
-		{
-			PopulateList(CallableActors);
-		});
+
+		PopulateList(CallableActors);
 	});
 }
 
@@ -122,8 +135,8 @@ void SBDC_ProjectSetup_OverlayWidget::PopulateList(const TArray<FCallableActor>&
 			if (!Function) continue;
 
 			FunctionListBox->AddSlot()
-			.AutoHeight()
-			.Padding(0, 1)
+			               .AutoHeight()
+			               .Padding(0, 1)
 			[
 				SNew(SButton)
 				.OnClicked(this, &SBDC_ProjectSetup_OverlayWidget::OnFunctionButtonClicked, ActorData.Actor, Function)
@@ -134,10 +147,9 @@ void SBDC_ProjectSetup_OverlayWidget::PopulateList(const TArray<FCallableActor>&
 				]
 			];
 		}
-		
+
 		ActorListScrollBox->AddSlot()
-		.AutoHeight()
-		.Padding(2, 4)
+		                  .Padding(2, 4)
 		[
 			SNew(SVerticalBox)
 
@@ -155,7 +167,7 @@ void SBDC_ProjectSetup_OverlayWidget::PopulateList(const TArray<FCallableActor>&
 					.Font(FAppStyle::GetFontStyle("BoldFont"))
 				]
 			]
-			
+
 			// Function List
 			+ SVerticalBox::Slot()
 			.AutoHeight()
@@ -182,9 +194,7 @@ FReply SBDC_ProjectSetup_OverlayWidget::OnFunctionButtonClicked(TWeakObjectPtr<A
 {
 	if (Actor.IsValid() && Function)
 	{
-		FFrame* Frame = new FFrame(nullptr, Function, nullptr, nullptr, Function->GetChildProperties());
-		Actor->ProcessEvent(Function, Frame->Locals);
-		delete Frame;
+		Actor->ProcessEvent(Function, nullptr);
 	}
 	return FReply::Handled();
 }

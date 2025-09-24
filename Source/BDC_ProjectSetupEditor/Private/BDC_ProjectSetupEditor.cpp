@@ -19,6 +19,13 @@
 #include "Widgets/Docking/SDockTab.h"
 #include "Editor/EditorEngine.h"
 #include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
+#include "Widgets/SWeakWidget.h"
+#include "InputCoreTypes.h"
+#include "Framework/Commands/InputBindingManager.h"
+#include "Framework/Application/IInputProcessor.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Widgets/SOverlay.h"
 
 #define LOCTEXT_NAMESPACE "FBDC_ProjectSetupEditorModule"
 
@@ -31,10 +38,43 @@ public:
 
 	virtual void RegisterCommands() override
 	{
+		// Default chord is empty; we handle hotkey via input preprocessor using settings
 		UI_COMMAND(ToggleOverlay, "Toggle Overlay", "Toggles the actor/function overlay.", EUserInterfaceActionType::Button, FInputChord());
 	}
 
 	TSharedPtr<FUICommandInfo> ToggleOverlay;
+};
+
+// Slate input processor to capture the overlay hotkey even when game viewport has focus
+class FOverlayInputProcessor : public IInputProcessor
+{
+public:
+	explicit FOverlayInputProcessor(FBDC_ProjectSetupEditorModule* InModule, FKey InKey)
+		: ModulePtr(InModule), OverlayKey(InKey)
+	{
+	}
+
+	virtual ~FOverlayInputProcessor() override = default;
+
+	// Required by IInputProcessor in UE 5.6 (pure virtual)
+	virtual void Tick(const float DeltaTime, FSlateApplication& SlateApp, TSharedRef<ICursor> Cursor) override {}
+
+	virtual bool HandleKeyDownEvent(FSlateApplication& SlateApp, const FKeyEvent& InKeyEvent) override
+	{
+		if (InKeyEvent.GetKey() == OverlayKey)
+		{
+			if (ModulePtr)
+			{
+				ModulePtr->ToggleOverlay();
+				return true;
+			}
+		}
+		return false;
+	}
+
+private:
+	FBDC_ProjectSetupEditorModule* ModulePtr = nullptr;
+	FKey OverlayKey;
 };
 
 void FBDC_ProjectSetupEditorModule::StartupModule()
@@ -44,24 +84,28 @@ void FBDC_ProjectSetupEditorModule::StartupModule()
 	PluginCommands = MakeShareable(new FUICommandList);
 
 	const UBDC_ProjectSetupSettings* Settings = GetDefault<UBDC_ProjectSetupSettings>();
-	const FInputChord Hotkey(Settings->OverlayHotkey);
+
+	// Read overlay key from settings
+	OverlayKey = Settings ? Settings->OverlayHotkey : EKeys::Three;
 
 	PluginCommands->MapAction(
 		FOverlayCommands::Get().ToggleOverlay,
-		FExecuteAction::CreateRaw(this, &FBDC_ProjectSetupEditorModule::ToggleOverlay),
-		FCanExecuteAction(),
-		FInputChord(Settings->OverlayHotkey)
+		FExecuteAction::CreateRaw(this, &FBDC_ProjectSetupEditorModule::ToggleOverlay)
 	);
 
-	// Register the command delegate with the level editor
+	// Register the command with the Level Editor's global actions so it works in editor and during PIE
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-	LevelEditorModule.GetGlobalLevelEditorActions()->ProcessCommandBindings(PluginCommands.ToSharedRef());
-	
+	LevelEditorModule.GetGlobalLevelEditorActions()->Append(PluginCommands.ToSharedRef());
+
+	// Register input preprocessor to catch the overlay key even when PIE has focus
+	OverlayInputProcessor = MakeShared<FOverlayInputProcessor>(this, OverlayKey);
+	FSlateApplication::Get().RegisterInputPreProcessor(OverlayInputProcessor.ToSharedRef());
+
     // Register the toolbar widget
     FToolMenuOwnerScoped OwnerScoped(this);
     UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.PlayToolBar");
     FToolMenuSection& Section = ToolbarMenu->FindOrAddSection("Play");
-    Section.AddEntry(FToolMenuEntry::InitWidget("ProjectSetupPlayWidget", SNew(SBDC_ProjectSetup_PlayWidget), FText::GetEmpty(), true, FToolMenuInsert("Play", EToolMenuInsertType::Before)));
+    Section.AddEntry(FToolMenuEntry::InitWidget("ProjectSetupPlayWidget", SNew(SBDC_ProjectSetup_PlayWidget), FText::GetEmpty(), true));
 
 	// Create the overlay widget, but don't show it yet
 	OverlayWidget = SNew(SBDC_ProjectSetup_OverlayWidget);
@@ -82,23 +126,55 @@ void FBDC_ProjectSetupEditorModule::ToggleOverlay()
 		return;
 	}
 
-	if (OverlayWidget->IsVisible())
+	if (bOverlayVisible)
 	{
-		GEngine->GameViewport->RemoveViewportWidgetContent(OverlayWidget.ToSharedRef());
+		if (OverlayContainer.IsValid())
+		{
+			GEngine->GameViewport->RemoveViewportWidgetContent(OverlayContainer.ToSharedRef());
+			OverlayContainer.Reset();
+		}
+		bOverlayVisible = false;
 	}
 	else
 	{
-		GEngine->GameViewport->AddViewportWidgetContent(
+		SAssignNew(OverlayContainer, SOverlay)
+		+ SOverlay::Slot()
+		.HAlign(HAlign_Right)
+		.VAlign(VAlign_Top)
+		.Padding(FMargin(10.0f))
+		[
 			SNew(SWeakWidget)
 			.PossiblyNullContent(OverlayWidget)
-		);
+		];
+
+		GEngine->GameViewport->AddViewportWidgetContent(OverlayContainer.ToSharedRef());
+		bOverlayVisible = true;
 		OverlayWidget->RefreshActorList();
 	}
 }
 
 void FBDC_ProjectSetupEditorModule::ShutdownModule()
 {
-    UToolMenus::UnregisterOwner(this);
+	// Unregister input preprocessor (only if Slate is still initialized)
+	if (OverlayInputProcessor.IsValid())
+	{
+		if (FSlateApplication::IsInitialized())
+		{
+			FSlateApplication::Get().UnregisterInputPreProcessor(OverlayInputProcessor.ToSharedRef());
+		}
+		OverlayInputProcessor.Reset();
+	}
+
+	// Ensure we remove any overlay content from the viewport safely
+	const bool bCanRemoveOverlay = bOverlayVisible && (GEngine != nullptr) && (GEngine->GameViewport != nullptr) && OverlayContainer.IsValid();
+	if (bCanRemoveOverlay)
+	{
+		GEngine->GameViewport->RemoveViewportWidgetContent(OverlayContainer.ToSharedRef());
+		OverlayContainer.Reset();
+		bOverlayVisible = false;
+	}
+
+	UToolMenus::UnregisterOwner(this);
 	FOverlayCommands::Unregister();
 }
 

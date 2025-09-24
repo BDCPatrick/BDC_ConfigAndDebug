@@ -14,6 +14,8 @@
 #include "Framework/Commands/UICommandList.h"
 
 class SBDC_ProjectSetup_OverlayWidget;
+class IInputProcessor;
+class SOverlay;
 
 class FBDC_ProjectSetupEditorModule : public IModuleInterface
 {
@@ -21,13 +23,26 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-private:
 	/** Toggles the visibility of the overlay widget. */
 	void ToggleOverlay();
+
+private:
 
 	/** The overlay widget instance. */
 	TSharedPtr<SBDC_ProjectSetup_OverlayWidget> OverlayWidget;
 
 	/** Command list for handling keybindings. */
 	TSharedPtr<FUICommandList> PluginCommands;
+
+	/** Tracks whether overlay is currently added to the viewport. */
+	bool bOverlayVisible = false;
+
+	/** The hotkey from settings. */
+	FKey OverlayKey;
+
+	/** Input preprocessor to catch the overlay key during PIE. */
+	TSharedPtr<IInputProcessor> OverlayInputProcessor;
+
+	/** Container added to the GameViewport to position the overlay top-right. */
+	TSharedPtr<SOverlay> OverlayContainer;
 };

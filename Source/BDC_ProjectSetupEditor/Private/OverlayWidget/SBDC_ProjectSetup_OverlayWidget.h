@@ -12,7 +12,6 @@
 
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
-#include "BDC_ProjectSetupTypes.h"
 #include "Async/Future.h"
 
 // Forward declarations

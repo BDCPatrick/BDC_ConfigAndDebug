@@ -12,6 +12,7 @@
 #include "GeneralProjectSettings.h"
 #include "MoviePlayerSettings.h"
 #include "Engine/UserInterfaceSettings.h"
+#include "BDC_ProjectSetupSettings.h"
 
 //~ Getters
 // =================================================================================================

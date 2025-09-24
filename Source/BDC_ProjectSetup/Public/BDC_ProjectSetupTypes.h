@@ -8,18 +8,22 @@
  * Unreal Engine and its associated trademarks are property of Epic Games, Inc.
  * and are used with permission.
  */
- 
- UENUM(BlueprintType)
+#pragma once
+
+#include "CoreMinimal.h"
+#include "BDC_ProjectSetupTypes.generated.h"
+
+UENUM(BlueprintType)
  enum class ENum_ProjectSetupType : uint8
  {
 	 Setup_Release UMETA(DisplayName="Release Play"),
 	 Setup_Debug UMETA(DisplayName="Debug Play"),
 	 Setup_DebugNo UMETA(DisplayName="Debug No Overlay")
- }
+ };
  
  UENUM(BlueprintType)
  enum class ENum_ProjectSetupOutExec : uint8
  {
 	 Exec_Release UMETA(DisplayName="Release"),
 	 Exec_Debug UMETA(DisplayName="Debug")
- }
+ };
