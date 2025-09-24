@@ -1,0 +1,35 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "1.0",
+  "FriendlyName": "BDC Config And Debug",
+  "Description": "A Plugin adding a new Debug Node, Play Mode switch in the Editor, and Functions to retrieve the Project Configs from the Settings.",
+  "Category": "BDC_Plugins",
+  "CreatedBy": "BDC_Patrick",
+  "CreatedByURL": "https://blackdevilcreations.de",
+  "DocsURL": "",
+  "MarketplaceURL": "",
+  "SupportURL": "",
+  "CanContainContent": false,
+  "IsBetaVersion": false,
+  "IsExperimentalVersion": false,
+  "Installed": false,
+  "Modules": [
+    {
+      "Name": "BDC_ConfigAndDebug",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "PlatformAllowList": [
+        "Win64"
+      ]
+    },
+    {
+      "Name": "BDC_ConfigAndDebugEditor",
+      "Type": "Editor",
+      "LoadingPhase": "Default",
+      "PlatformAllowList": [
+        "Win64"
+      ]
+    }
+  ]
+}
