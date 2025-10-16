@@ -32,9 +32,13 @@ public class BDC_ConfigAndDebug : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"ApplicationCore",
+				"UMG",
 				"DeveloperSettings", 
 				"MoviePlayer",
-				"EngineSettings"
+				"EngineSettings",
+				"AssetRegistry",
+				"RenderCore"
 			}
 		);
 	}
